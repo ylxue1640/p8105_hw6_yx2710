@@ -1,0 +1,41 @@
+---
+title: "p8105_hw6_yx2710"
+output: html_document
+date: "2022-11-29"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+```
+
+
+#Problem2
+```{r}
+homocide_raw_df = read_csv("https://raw.githubusercontent.com/washingtonpost/data-homicides/master/homicide-data.csv")
+```
+
+
+```{r}
+homocide_df = 
+  homocide_raw_df %>% 
+  janitor::clean_names() %>% 
+  mutate(
+    city_state = str_c(city, state, sep = ","),
+    status = case_when(
+      disposition == "Closed without arrest" ~ "unsolved",
+      disposition == "Open/No arrest" ~ "unsolved",
+      disposition == "Closed by arrest" ~ "solved"
+      ),
+    victim_age = as.numeric(victim_age)
+    ) %>% 
+    filter(
+    city_state != "Dallas,TX" & city_state != "Phoenix,AZ" & city_state != "Kansas City,MO" &
+    city_state != "Tulsa,AL" & victim_race %in% c("White","Black"))
+    
+```
+
+
