@@ -15,13 +15,13 @@ library(tidyverse)
 
 #Problem2
 ```{r}
-homocide_raw_df = read_csv("https://raw.githubusercontent.com/washingtonpost/data-homicides/master/homicide-data.csv")
+homicide_raw_df = read_csv("https://raw.githubusercontent.com/washingtonpost/data-homicides/master/homicide-data.csv")
 ```
 
 
 ```{r}
-homocide_df = 
-  homocide_raw_df %>% 
+homicide_df = 
+  homicide_raw_df %>% 
   janitor::clean_names() %>% 
   mutate(
     city_state = str_c(city, state, sep = ","),
@@ -30,7 +30,8 @@ homocide_df =
       disposition == "Open/No arrest" ~ "unsolved",
       disposition == "Closed by arrest" ~ "solved"
       ),
-    victim_age = as.numeric(victim_age)
+    victim_age = as.numeric(victim_age),
+    status_ = as.numeric(status == "solved")
     ) %>% 
     filter(
     city_state != "Dallas,TX" & city_state != "Phoenix,AZ" & city_state != "Kansas City,MO" &
@@ -39,9 +40,8 @@ homocide_df =
 ```
 
 ```{r}
-bal_df = homocide_df %>% 
-  filter(city_state == "Baltimore,MD") %>% 
-  mutate(status_ = as.numeric(status == "solved"))
+bal_df = homicide_df %>% 
+  filter(city_state == "Baltimore,MD") 
 ```
 
 ```{r}
@@ -54,9 +54,40 @@ bal_fit =
     conf.upper = exp(estimate + 1.96*std.error)) %>% 
   filter(term == "victim_sexMale") %>% 
   select(term,OR, p.value, conf.lower, conf.upper) %>% 
-  knitr::kable()
+  knitr::kable(digits = 3)
   
+bal_fit
 ```
 
+```{r}
+glm_model = function(city_df){
+  city_fit = 
+    glm(status_ ~ victim_age + victim_sex + victim_race, family = binomial(), data = city_df) %>%
+  broom::tidy() %>% 
+  mutate(
+    OR = exp(estimate),
+    conf.lower = exp(estimate - 1.96*std.error),
+    conf.upper = exp(estimate + 1.96*std.error)) %>%
+  filter(term == "victim_sexMale") %>%
+  select(OR, conf.lower, conf.upper)
+  
+  return(city_fit)
+}
+```
+
+```{r}
+models_df = 
+  homicide_df %>% 
+
+  nest(data = -city_state) %>% 
+  mutate(
+    city_fit = purrr::map(data, glm_model)
+  ) %>% 
+  select(-data) %>% 
+  unnest(city_fit)
+
+models_df %>% 
+  knitr::kable(digits = 3)
+```
 
 
