@@ -90,4 +90,14 @@ models_df %>%
   knitr::kable(digits = 3)
 ```
 
+```{r}
+models_df %>% 
+  mutate(city_state = fct_reorder(city_state,OR)) %>% 
+  ggplot(aes(x = city_state, y = OR)) +
+  geom_point() +
+  geom_errorbar(aes(ymin = conf.lower, ymax = conf.upper)) +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))+
+  xlab("City, State")+
+  ylab("OR for solving homicides comparing male victims to female victims")
+```
 
