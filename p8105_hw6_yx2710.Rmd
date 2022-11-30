@@ -38,4 +38,25 @@ homocide_df =
     
 ```
 
+```{r}
+bal_df = homocide_df %>% 
+  filter(city_state == "Baltimore,MD") %>% 
+  mutate(status_ = as.numeric(status == "solved"))
+```
+
+```{r}
+bal_fit = 
+  glm(status_ ~ victim_age + victim_sex + victim_race, data = bal_df) %>% 
+  broom::tidy() %>% 
+  mutate(
+    OR = exp(estimate),
+    conf.lower = exp(estimate - 1.96*std.error),
+    conf.upper = exp(estimate + 1.96*std.error)) %>% 
+  filter(term == "victim_sexMale") %>% 
+  select(term,OR, p.value, conf.lower, conf.upper) %>% 
+  knitr::kable()
+  
+```
+
+
 
