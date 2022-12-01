@@ -46,7 +46,7 @@ bal_df = homicide_df %>%
 
 ```{r}
 bal_fit = 
-  glm(status_ ~ victim_age + victim_sex + victim_race, data = bal_df) %>% 
+  glm(status_ ~ victim_age + victim_sex + victim_race, family = binomial(), data = bal_df) %>% 
   broom::tidy() %>% 
   mutate(
     OR = exp(estimate),
@@ -100,4 +100,34 @@ models_df %>%
   xlab("City, State")+
   ylab("OR for solving homicides comparing male victims to female victims")
 ```
+
+#Problem 3
+
+```{r}
+birth_raw_df = read_csv("birthweight.csv")
+```
+
+```{r}
+birth_df= 
+  birth_raw_df %>% 
+  janitor::clean_names() %>% 
+  mutate(
+    baby_sex = as.factor(baby_sex),
+    frace = as.factor(frace),
+    malform = as.factor(malform),
+    mrace = as.factor(mrace)
+  ) %>% 
+  drop_na()
+```
+
+
+
+
+
+
+
+
+
+
+
 
