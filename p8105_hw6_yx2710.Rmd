@@ -10,6 +10,8 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 library(tidyverse)
+library(modelr)
+library(mgcv)
 ```
 
 
@@ -144,12 +146,51 @@ birth_df %>%
   ggplot(aes(y = resid, x = pred)) + 
   geom_point(alpha = 0.3, size = 1) +
   labs(title = "Model residuals against fitted values") +
-  xlab("fitted value") + ylab("model residual")
+  xlab("fitted value") + 
+  ylab("model residual")
 ```
 
+```{r}
+fit_2 = lm(bwt ~ blength + gaweeks, data = birth_df)
+fit_2 %>% 
+  broom::tidy() %>%  
+  knitr::kable(digit = 3)
 
+fit_3 = lm(bwt ~ bhead + blength + babysex + bhead*blength + bhead*babysex + babysex*blength + bhead*blength*babysex, data = birth_df)
+fit_3 %>% 
+  broom::tidy() %>%  
+  knitr::kable(digit = 3)
+```
 
+```{r}
+cv_df = 
+  crossv_mc(birth_df, 100) %>% 
+  mutate(
+    train = map(train, as_tibble),
+    test = map(test, as_tibble)) %>% 
+  mutate(
+    mod_backward = map(train, ~final_model, data = .x),
+    mod_main_effect = map(train, ~fit_2, data = .x),
+    mod_interaction = map(train, ~fit_3, data = .x)) %>% 
+  mutate(
+    rmse_mod_backward = map2_dbl(mod_backward, test, ~rmse(model = .x, data = .y)),
+    rmse_mod_main_effect = map2_dbl(mod_main_effect, test, ~rmse(model = .x, data = .y)),
+    rmse_mod_interaction = map2_dbl(mod_interaction, test, ~rmse(model = .x, data = .y))
+  )
+```
 
+```{r}
+cv_df %>% 
+  select(starts_with("rmse")) %>% 
+  pivot_longer(
+    everything(),
+    names_to = "model", 
+    values_to = "rmse",
+    names_prefix = "rmse_") %>% 
+  mutate(model = fct_inorder(model)) %>% 
+  ggplot(aes(x = model, y = rmse)) + geom_violin()
+```
+According to the plot of rmse, we can see that the backward model shows the lowest rmse than the other main effect model and interaction model. As a result, we can conclude that the backward model has the best performance.
 
 
 
