@@ -112,7 +112,7 @@ birth_df=
   birth_raw_df %>% 
   janitor::clean_names() %>% 
   mutate(
-    baby_sex = as.factor(baby_sex),
+    babysex = as.factor(babysex),
     frace = as.factor(frace),
     malform = as.factor(malform),
     mrace = as.factor(mrace)
@@ -120,7 +120,32 @@ birth_df=
   drop_na()
 ```
 
+```{r}
+fit_1 = lm(bwt ~ ., data = birth_df)
 
+fit_1 %>% 
+  broom::tidy() %>%
+   knitr::kable(digit = 3)
+
+backward_model <- step(fit_1, direction="backward")
+summary(backward_model)
+```
+I use the backward stepwise to select the variables in the model and they are babysex, bhead, blength, delwt, gaweeks, mheight, mrace, parity, ppwt and smoken.
+
+```{r}
+final_model = lm(bwt ~ babysex + bhead + blength + delwt + gaweeks + mheight + mrace + parity + ppwt + smoken, data = birth_df)
+```
+
+
+```{r}
+birth_df %>%
+  modelr::add_predictions(final_model) %>%
+  modelr::add_residuals(final_model) %>%
+  ggplot(aes(y = resid, x = pred)) + 
+  geom_point(alpha = 0.3, size = 1) +
+  labs(title = "Model residuals against fitted values") +
+  xlab("fitted value") + ylab("model residual")
+```
 
 
 
